@@ -1,0 +1,8 @@
+package hokkori.web.dto;
+
+import lombok.Data;
+
+@Data
+public class MessageSizeDto {
+	private int size; 
+}
