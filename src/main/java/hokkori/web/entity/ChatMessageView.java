@@ -9,10 +9,11 @@ import lombok.Data;
 
 @Data
 @Entity
-public class Channel {
+public class ChatMessageView {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private Integer id;
 	private String channelId;
-	private String channelName;
+	private Integer chatMessageId;
+	private Integer memberId;
 }

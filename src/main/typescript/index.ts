@@ -30,7 +30,7 @@ let maxSize = 0;
 window.addEventListener("DOMContentLoaded", (event: Event) => {
 	const path: string = window.location.pathname;
 
-	if (path.includes("index")) {
+	if (path == "/") {
 		initIndex();
 	} else if (path.includes("chatHtml")) {
 		initChat();
@@ -43,7 +43,9 @@ window.addEventListener("DOMContentLoaded", (event: Event) => {
 	}
 });
 
-function initIndex() { }
+function initIndex() {
+	existNewMessage();
+}
 
 function initChat() {
 	// アプリケーション起動時にデータを取得して表示する関数を呼び出します
@@ -78,6 +80,26 @@ function initFightingStrength() {
 async function onFightingStrengthInit(): Promise<void> {
 	await axios.get("/fightingStrength/init");
 }
+async function existNewMessage(): Promise<void> {
+	
+	const chatClasseElements = document.querySelectorAll<HTMLElement>('.chatClass');
+	const elementsArray = Array.from(chatClasseElements);
+	for (const htmlElement of elementsArray) {
+		const channelId : string = htmlElement.dataset.channelId as string;
+		const url = "/chat/existNewMessage?channelId="+channelId;
+		const response = await axios.get(url, {
+		});
+		const isNew : Boolean = response.data;
+		if (isNew) {
+			htmlElement.style.color = 'red';
+			const newEle = document.createElement("img") as HTMLImageElement;
+			newEle.src = "/img/new.png";
+			newEle.width = 30;
+			htmlElement.appendChild(newEle);
+		}
+	}
+}
+
 async function onFightingStrengthDownload(): Promise<void> {
 	const url = "/fightingStrength/excel";
 
@@ -294,7 +316,7 @@ async function fetchAndDisplayChatMessage(
 			main.appendChild(quate);
 		}
 		let mainContents: string = "";
-		mainContents += `${chatMessage.message}`;
+		mainContents += `${chatMessage.message}<br>`;
 		message.innerHTML = mainContents;
 		main.appendChild(message);
 		if (
@@ -305,10 +327,13 @@ async function fetchAndDisplayChatMessage(
 				const a = document.createElement("a");
 				a.href = chatAttachmentDto.attachmentUrl;
 				if (chatAttachmentDto.attachmentUrl.match(".jpg|.png|.JPG|.PNG") != null) {
-					const img = document.createElement("img") as HTMLImageElement;
-					img.src = chatAttachmentDto.attachmentUrl;
-					img.width = 300;
-					a.appendChild(img);
+					const divEle = document.createElement("div")as HTMLDivElement;
+					divEle.innerHTML = `
+						<a href="${chatAttachmentDto.attachmentUrl}" data-lightbox="image-1" data-title="title" data-alt="alt">
+						<img src="${chatAttachmentDto.attachmentUrl}" width=300>
+						</a>
+					    `;
+					main.appendChild(divEle);
 				} else {
 					const p = document.createElement("p") as HTMLElement;
 					p.textContent = "リンク";

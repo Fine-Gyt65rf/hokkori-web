@@ -1,3 +1,4 @@
+SET SESSION FOREIGN_KEY_CHECKS=0;
 
 /* Drop Tables */
 

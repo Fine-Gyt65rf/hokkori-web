@@ -1,5 +1,9 @@
 package hokkori.web.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import hokkori.web.entity.ChatMessageView;
 import lombok.Data;
 
 @Data
@@ -14,4 +18,5 @@ public class AllianceMemberDto {
 	private Integer statementCount;
 	private String createDate;
 	private boolean bot = false;
+	private List<ChatMessageView> chatMessageViewList = new ArrayList<ChatMessageView>();
 }

@@ -5,11 +5,15 @@
 	<title>ほっこり茶屋</title>
 	<script type="module" src="./js/main.js"></script>
 	<link rel="stylesheet" href="css/style.css">
-	<script type="module" src="./js/top.js"></script>
+	<script src="/js/top.js"></script>
+	<script type="module" src="/js/main.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+	<meta name="_csrf" th:content="${_csrf.token}" />
+	<meta name="_csrf_header" th:content="${_csrf.headerName}" />
 </head>
 
 <body id="bodyContainer">
+	<input type="hidden" id="channelId" th:value="-1">
 	<nav id="mainnav">
 		<p id="menuWrap"><a id="menu"><span id="menuBtn"></span></a></p>
 		<div class="panel">
@@ -23,7 +27,7 @@
 	</nav>
 
 	<header id="header">
-		<img src="img/main.png" alt="">
+		<img class="imgMax" src="img/main.png" alt="">
 		<div id="slogan">
 			<h2>50位以内を目指しつつ、楽しくプレイ！</h2>
 		</div>
@@ -74,7 +78,7 @@
 
 	<section id="sec02">
 		<div class="wrap">
-			<p class="bg"><img src="img/disco.png" alt=""></p>
+			<p class="bg"><img class="imgMax" src="img/disco.png" alt=""></p>
 			<div class="txt">
 				<div class="vMid">
 					<h2>Discord</h2>
@@ -83,7 +87,7 @@
 			</div>
 		</div>
 		<div id="sec02_02" class="wrap">
-			<p class="bg"><img src="img/chat.png" alt=""></p>
+			<p class="bg"><img class="imgMax" src="img/chat.png" alt=""></p>
 			<div class="txt">
 				<div class="vMid">
 					<h2>メンバー専用ホームページ</h2>
@@ -94,7 +98,7 @@
 			</div>
 		</div>
 		<div class="wrap">
-			<p class="bg"><img src="img/sheet.png" alt=""></p>
+			<p class="bg"><img class="imgMax" src="img/sheet.png" alt=""></p>
 			<div class="txt">
 				<div class="vMid">
 					<h2>戦力表</h2>
@@ -110,11 +114,11 @@
 			<ul class="col2">
 				<li>
 					<h2>メンバー専用 雑談チャット</h2>
-					<p><a href="chatHtml/1386571666116710435">雑談用のチャットです。</a></p>
+					<p><a class="chatClass" data-channel-id="1386571666116710435" href="chatHtml/1386571666116710435">雑談用のチャットです。</a></p>
 				</li>
 				<li>
 					<h2>メンバー専用 同盟戦会議用チャット</h2>
-					<p><a href="chatHtml/1393571766462316554">同盟戦会議用のチャットです。</a></p>
+					<p><a class="chatClass" data-channel-id="1393571766462316554" href="chatHtml/1393571766462316554">同盟戦会議用のチャットです。</a></p>
 				</li>
 				<li>
 					<h2>メンバー専用 戦力登録</h2>

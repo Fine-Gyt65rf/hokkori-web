@@ -27,6 +27,7 @@ public class LoginUserDetailsService implements UserDetailsService {
 		}
 
 		AllianceMember allianceMember = allianceMemberRepository.findByAyarabuName(username);
+		
 		if (allianceMember == null) {
 			throw new UsernameNotFoundException("アカウントが見つかりませんでした。");
 		}

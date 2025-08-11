@@ -21,12 +21,11 @@ public class ChatController {
 		ChannelMaster channel = channelRepository.findByChannelId(channelId);
 		model.addAttribute("channelName", channel.getChannelName());
 		model.addAttribute("channelId", channelId);
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		String name = "";
 		if (authentication != null && authentication.isAuthenticated()) {
 			name = authentication.getName();
-
 		}
 		model.addAttribute("name", name);
 		return "chat";

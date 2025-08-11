@@ -124,7 +124,7 @@ h1, h2{
 	font-family: 'Josefin Sans', 'Noto Sans JP',serif;
 }
 
-img{
+.imgMax{
 	width: 100%;
 	height: auto;
 }

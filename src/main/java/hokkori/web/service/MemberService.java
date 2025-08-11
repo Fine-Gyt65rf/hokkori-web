@@ -21,8 +21,12 @@ import hokkori.web.dto.ChatMessageDto;
 import hokkori.web.dto.MemberAlliance;
 import hokkori.web.dto.MemberRole;
 import hokkori.web.entity.AllianceMember;
+import hokkori.web.entity.ChannelMaster;
+import hokkori.web.entity.ChatMessageView;
 import hokkori.web.model.discord.DIscordEventListener;
 import hokkori.web.repository.AllianceMemberRepository;
+import hokkori.web.repository.ChannelMasterRepository;
+import hokkori.web.repository.ChatMessageViewRepository;
 import jp.highwide.common.excel.ExcelUtil;
 
 @Service
@@ -30,6 +34,10 @@ public class MemberService implements DIscordEventListener {
 	Logger log = LoggerFactory.getLogger(MemberService.class);
 	@Autowired
 	private AllianceMemberRepository allianceMemberRepository;
+	@Autowired
+	private ChatMessageViewRepository chatMessageViewRepository;
+	@Autowired
+	private ChannelMasterRepository channelMasterRepository;
 	private ModelMapper modelMapper;
 
 	@Transactional
@@ -124,6 +132,16 @@ public class MemberService implements DIscordEventListener {
 			if (allianceMember == null) {
 				allianceMember = toEntityFromDto(allianceMemberDto);
 				allianceMember = allianceMemberRepository.save(allianceMember);
+
+				List<ChannelMaster> channelList = channelMasterRepository.findAll();
+				for (ChannelMaster channelMaster : channelList) {
+					ChatMessageView chatMessageView = new ChatMessageView();
+					chatMessageView.setChannelId(channelMaster.getChannelId());
+					chatMessageView.setChatMessageId(0);
+					chatMessageView.setMemberId(allianceMember.getId());
+					chatMessageViewRepository.save(chatMessageView);
+				}
+
 				log.info("メンバー追加:" + allianceMemberDto);
 			} else {
 				int id = allianceMember.getId();
@@ -170,12 +188,18 @@ public class MemberService implements DIscordEventListener {
 
 	public AllianceMemberDto getAllianceMemberDtoByAyarabuName(String ayarabuName) {
 		AllianceMember allianceMember = allianceMemberRepository.findByAyarabuName(ayarabuName);
-		return modelMapper.map(allianceMember, AllianceMemberDto.class);
+		AllianceMemberDto allianceMemberDto = modelMapper.map(allianceMember, AllianceMemberDto.class);
+		List<ChatMessageView> chatMessageViewList = chatMessageViewRepository.findAllByMemberId(allianceMember.getId());
+		allianceMemberDto.setChatMessageViewList(chatMessageViewList);
+		return allianceMemberDto;
 	}
 
 	public AllianceMemberDto getAllianceMemberDtoByMemberId(Integer memberId) {
 		AllianceMember allianceMember = allianceMemberRepository.findById(memberId).get();
-		return modelMapper.map(allianceMember, AllianceMemberDto.class);
+		AllianceMemberDto allianceMemberDto = modelMapper.map(allianceMember, AllianceMemberDto.class);
+		List<ChatMessageView> chatMessageViewList = chatMessageViewRepository.findAllByMemberId(allianceMember.getId());
+		allianceMemberDto.setChatMessageViewList(chatMessageViewList);
+		return allianceMemberDto;
 	}
 	/**
 	 * メンバーの一覧をエクセルに出力する。

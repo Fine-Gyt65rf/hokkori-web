@@ -28,10 +28,12 @@ import hokkori.web.dto.ChatMessageDto;
 import hokkori.web.entity.ChannelMaster;
 import hokkori.web.entity.ChatAttachment;
 import hokkori.web.entity.ChatMessage;
+import hokkori.web.entity.ChatMessageView;
 import hokkori.web.model.discord.DIscordEventListener;
 import hokkori.web.repository.ChannelMasterRepository;
 import hokkori.web.repository.ChatAttachmentRepository;
 import hokkori.web.repository.ChatMessageRepository;
+import hokkori.web.repository.ChatMessageViewRepository;
 import hokkori.web.util.discord.DiscordBot;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -50,18 +52,33 @@ public class ChatService implements DIscordEventListener {
 	private ChatAttachmentRepository chatAttachmentRepository;
 	@Autowired
 	private ChatMessageRepository chatMessageRepository;
+	@Autowired
+	private ChatMessageViewRepository chatMessageViewRepository;
 	private ModelMapper modelMapper;
-	
+
 	public ChatService() {
 		modelMapper = new ModelMapper();
 	}
-	
+
 	@Transactional
 	public void init() {
 		List<ChannelMaster> channelList = channelRepository.findAll();
 		channelList.forEach(channel -> {
 			processChannel(channel);
 		});
+	}
+
+	public boolean existNewMessage(String channelId, int chatMessageid) {
+		PageRequest pageable = PageRequest.of(0, 200);
+		List<ChatMessageDto> chatMessageDtoList = getChatMessageDtoList(channelId, pageable, null);
+		boolean result = false;
+		for (ChatMessageDto chatMessageDto : chatMessageDtoList) {
+			if (chatMessageDto.getId() > chatMessageid) {
+				result = true;
+				break;
+			}
+		}
+		return result;
 	}
 
 	@Async
@@ -210,13 +227,14 @@ public class ChatService implements DIscordEventListener {
 		}
 	}
 
-	public List<ChatMessageDto> getChatMessageDtoList(String channelId) {
-		PageRequest pageable = PageRequest.of(0, 200);
-		return getChatMessageDtoList(channelId, pageable);
-	}
+	//	public List<ChatMessageDto> getChatMessageDtoList(String channelId) {
+	//		PageRequest pageable = PageRequest.of(0, 200);
+	//		return getChatMessageDtoList(channelId, pageable);
+	//	}
+
 
 	@Transactional
-	public List<ChatMessageDto> getChatMessageDtoList(String channelId, Pageable pageable) {
+	public List<ChatMessageDto> getChatMessageDtoList(String channelId, Pageable pageable, String ayarabuName) {
 		ChannelMaster channel = channelRepository.findByChannelId(channelId);
 		List<ChatMessageDto> chatMessageDtoList = new ArrayList<>();
 		Page<ChatMessage> chatMessagePage = chatMessageRepository.findByChannelMasterId(channel.getId(), pageable);
@@ -235,7 +253,18 @@ public class ChatService implements DIscordEventListener {
 			chatMessageDtoList.add(chatMessageDto);
 		}
 		chatMessageDtoList.sort(Comparator.comparing(ChatMessageDto::getId).reversed());
-
+		if (ayarabuName != null && !ayarabuName.isEmpty()) {
+			AllianceMemberDto allianceMemberDto = memberService.getAllianceMemberDtoByAyarabuName(ayarabuName);
+			List<ChatMessageView> chatMessageViewList = chatMessageViewRepository
+					.findAllByMemberId(allianceMemberDto.getId());
+			chatMessageViewList.forEach(chatMessageView -> {
+				if (chatMessageView.getChannelId().equals(channelId)) {
+					ChatMessageDto firstChatMessageDto = chatMessageDtoList.getFirst();
+					chatMessageView.setChatMessageId(firstChatMessageDto.getId());
+					chatMessageViewRepository.save(chatMessageView);
+				}
+			});
+		}
 		return chatMessageDtoList;
 	}
 
@@ -250,7 +279,7 @@ public class ChatService implements DIscordEventListener {
 	@Override
 	public void onMessageDelete(String messageId) {
 		// TODO 自動生成されたメソッド・スタブ
-		
+
 	}
 
 }

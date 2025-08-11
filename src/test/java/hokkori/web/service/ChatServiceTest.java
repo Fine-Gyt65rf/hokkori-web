@@ -27,7 +27,8 @@ class ChatServiceTest {
 	@Test
 	public void testInit() {
 		chatService.init();
-		List<ChatMessageDto> chatMessageDtoList = chatService.getChatMessageDtoList("1393571766462316554");
+		PageRequest pageable = PageRequest.of(0, 200);
+		List<ChatMessageDto> chatMessageDtoList = chatService.getChatMessageDtoList("1393571766462316554", pageable, null);
 		ChatMessageDto chatMessageDto = chatMessageDtoList.get(0);
 		assertEquals("1393571766462316554", chatMessageDto.getChannelId());
 		assertEquals("web同期用チャンネル", chatMessageDto.getChannelName());
@@ -103,14 +104,15 @@ class ChatServiceTest {
 
 	@Test
 	void testGetChatMessageDtoList() {
-		List<ChatMessageDto> chatMessageDtoList = chatService.getChatMessageDtoList("1393571766462316554");
+		PageRequest pageable = PageRequest.of(0, 200);
+		List<ChatMessageDto> chatMessageDtoList = chatService.getChatMessageDtoList("1393571766462316554", pageable, null);
 		assertEquals(3, chatMessageDtoList.size());
 	}
 
 	@Test
 	void testGetChatMessageDtoListStringPageable() {
 		PageRequest pageable = PageRequest.of(0, 2);
-		List<ChatMessageDto> chatMessageDtoList = chatService.getChatMessageDtoList("1393571766462316554", pageable);
+		List<ChatMessageDto> chatMessageDtoList = chatService.getChatMessageDtoList("1393571766462316554", pageable, null);
 		assertEquals(2, chatMessageDtoList.size());
 		ChatMessageDto chatMessageDto;
 		chatMessageDto = chatMessageDtoList.get(0);
