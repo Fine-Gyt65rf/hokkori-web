@@ -25,6 +25,7 @@ import hokkori.web.dto.MemberAlliance;
 import hokkori.web.entity.AllianceMember;
 import hokkori.web.entity.FightingStrength;
 import hokkori.web.entity.LevelMaster;
+import hokkori.web.model.member.MemberModel;
 import hokkori.web.repository.AllianceMemberRepository;
 import hokkori.web.repository.FightingStrengthRepository;
 import hokkori.web.repository.LevelMasterRepository;
@@ -44,7 +45,7 @@ public class FightingStrengthService {
 	@Autowired
 	private AllianceMemberRepository allianceMemberRepository;
 	@Autowired
-	private MemberService memberService;
+	private MemberModel memberModel;
 	private ModelMapper modelMapper;
 
 	public FightingStrengthService() {
@@ -118,7 +119,7 @@ public class FightingStrengthService {
 			List<FightingStrengthExcelDto> fightingStrengthExcelDtoList = ExcelUtil.readExcelToBean(0, 1, is,
 					FightingStrengthExcelDto.class);
 			fightingStrengthExcelDtoList.forEach(dto->{
-				AllianceMemberDto allianceMemberDto = memberService.getAllianceMemberDtoByMemberId(dto.getMemberId());
+				AllianceMemberDto allianceMemberDto = memberModel.getAllianceMemberDtoByMemberId(dto.getMemberId());
 				dto.setMemberId(allianceMemberDto.getId());
 			});
 			List<FightingStrength> fightingStrengthList = modelMapper.map(fightingStrengthExcelDtoList,

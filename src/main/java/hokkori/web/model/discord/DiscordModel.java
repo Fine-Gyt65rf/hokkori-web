@@ -20,10 +20,10 @@ import hokkori.web.dto.ChatAttachmentDto;
 import hokkori.web.dto.ChatMessageDto;
 import hokkori.web.entity.ChannelMaster;
 import hokkori.web.entity.ChatMessage;
+import hokkori.web.model.chat.ChatModel;
+import hokkori.web.model.member.MemberModel;
 import hokkori.web.repository.ChannelMasterRepository;
 import hokkori.web.repository.ChatMessageRepository;
-import hokkori.web.service.ChatService;
-import hokkori.web.service.MemberService;
 import hokkori.web.util.discord.DiscordBot;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -49,16 +49,15 @@ public class DiscordModel extends ListenerAdapter {
 	@Autowired
 	private DiscordBot discordBot;
 	@Autowired
-	private MemberService memberService;
+	private ChatModel chatModel;
 	@Autowired
-	private ChatService chatService;
+	private MemberModel memberModel;
 	@Autowired
 	private ChatMessageRepository chatMessageRepository;
 	@Autowired
 	private ChannelMasterRepository channelRepository;
 	private List<DIscordEventListener> dIscordEventListenerList = new ArrayList<DIscordEventListener>();
-
-	private List<Message> messageList;
+	private List<String> channelIdList = new ArrayList<String>();
 
 	public void initDiscordMember() {
 		discordBot.getGuild().loadMembers().onSuccess(members -> {
@@ -69,7 +68,7 @@ public class DiscordModel extends ListenerAdapter {
 
 			try {
 				for (Member member : members) {
-					memberService.init(getName(member), member.getId(), member.getUser().isBot());
+					memberModel.init(getName(member), member.getId(), member.getUser().isBot());
 				}
 			} catch (Exception e) {
 				log.error("メンバー取得でエラー", e);
@@ -77,6 +76,10 @@ public class DiscordModel extends ListenerAdapter {
 			}
 		}).onError(throwable -> {
 			log.error("メンバー取得でエラー", throwable);
+		});
+		List<ChannelMaster> channelMasterList = channelRepository.findAll();
+		channelMasterList.forEach(channelMaster -> {
+			channelIdList.add(channelMaster.getChannelId());
 		});
 		log.info("Discordメンバー取得完了");
 	}
@@ -104,10 +107,10 @@ public class DiscordModel extends ListenerAdapter {
 				messageId = list.getFirst().getDiscordMessageId();
 				discordBot.getChannel(channel.getChannelId()).getHistoryBefore(messageId, limit).queue(
 						history -> {
-							messageList = history.getRetrievedHistory();
+							List<Message> messageList = history.getRetrievedHistory();
 							log.info("基準メッセージ (" + messageId + ") より前のメッセージ " + messageList.size()
 									+ " 件を取得しました。");
-							chatService.saveChatHistory(messageList, channel);
+							chatModel.saveChatHistory(messageList, channel);
 
 						});
 			}
@@ -125,7 +128,16 @@ public class DiscordModel extends ListenerAdapter {
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
 		try {
-			Thread.sleep(200);
+			boolean flag = false;
+			for (String channelId : channelIdList) {
+				if (event.getChannel().getId().equals(channelId)) {
+					flag = true;
+					break;
+				}
+			}
+			if (flag == false) {
+				return;
+			}
 			ChatMessageDto chatMessageDto = createChatMessageDto(event, event.getMember(), event.getMessage());
 			for (DIscordEventListener dIscordEventListener : dIscordEventListenerList) {
 				dIscordEventListener
@@ -151,7 +163,7 @@ public class DiscordModel extends ListenerAdapter {
 				attachmentDtoList.add(chatAttachmentDto);
 			});
 		}
-		AllianceMemberDto allianceMemberDto = memberService.getAllianceMemberDto(member.getId());
+		AllianceMemberDto allianceMemberDto = memberModel.getAllianceMemberDto(member.getId());
 		if (allianceMemberDto == null) {
 			allianceMemberDto = new AllianceMemberDto();
 			log.warn("メンバーにいない人からメッセージ message=" + discoMessage);
@@ -186,6 +198,9 @@ public class DiscordModel extends ListenerAdapter {
 	}
 
 	private String getName(Member member) {
+		if (member == null) {
+			return "不明";
+		}
 		String nickname = member.getNickname();
 		String effectiveName = member.getEffectiveName();
 		if (nickname == null) {
@@ -197,6 +212,16 @@ public class DiscordModel extends ListenerAdapter {
 	@Override
 	public void onMessageUpdate(MessageUpdateEvent event) {
 		try {
+			boolean flag = false;
+			for (String channelId : channelIdList) {
+				if (event.getChannel().getId().equals(channelId)) {
+					flag = true;
+					break;
+				}
+			}
+			if (flag == false) {
+				return;
+			}
 			ChatMessageDto chatMessageDto = createChatMessageDto(event, event.getMember(), event.getMessage());
 			for (DIscordEventListener dIscordEventListener : dIscordEventListenerList) {
 				dIscordEventListener.onMessageUpdate(chatMessageDto);
@@ -211,6 +236,16 @@ public class DiscordModel extends ListenerAdapter {
 	@Override
 	public void onMessageDelete(MessageDeleteEvent event) {
 		try {
+			boolean flag = false;
+			for (String channelId : channelIdList) {
+				if (event.getChannel().getId().equals(channelId)) {
+					flag = true;
+					break;
+				}
+			}
+			if (flag == false) {
+				return;
+			}
 			for (DIscordEventListener dIscordEventListener : dIscordEventListenerList) {
 				dIscordEventListener
 						.onMessageDelete(event.getMessageId());
@@ -225,7 +260,7 @@ public class DiscordModel extends ListenerAdapter {
 	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
 		try {
 			Member member = event.getMember();
-			AllianceMemberDto allianceMemberDto = memberService.getAllianceMemberDto(member.getId());
+			AllianceMemberDto allianceMemberDto = memberModel.getAllianceMemberDto(member.getId());
 			for (DIscordEventListener dIscordEventListener : dIscordEventListenerList) {
 				dIscordEventListener
 						.onGuildMemberJoin(allianceMemberDto);
@@ -240,7 +275,7 @@ public class DiscordModel extends ListenerAdapter {
 	public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
 		try {
 			Member member = event.getMember();
-			AllianceMemberDto allianceMemberDto = memberService.getAllianceMemberDto(member.getId());
+			AllianceMemberDto allianceMemberDto = memberModel.getAllianceMemberDto(member.getId());
 			allianceMemberDto.setBot(false);
 			for (DIscordEventListener dIscordEventListener : dIscordEventListenerList) {
 				dIscordEventListener
@@ -263,7 +298,7 @@ public class DiscordModel extends ListenerAdapter {
 	}
 
 	public void sendMessage(ChatMessageDto chatMessageDto) {
-		discordBot.sendMessage(chatMessageDto, memberService.getAllianceMemberDtoList());
+		discordBot.sendMessage(chatMessageDto, memberModel.getAllianceMemberDtoList());
 	}
 
 	@Override

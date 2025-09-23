@@ -76,8 +76,7 @@ CREATE TABLE chat_message_view
 	channel_id text,
 	chat_message_id int,
 	member_id int NOT NULL,
-	PRIMARY KEY (id),
-	UNIQUE (member_id)
+	PRIMARY KEY (id)
 );
 
 

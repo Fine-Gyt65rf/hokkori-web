@@ -1,11 +1,7 @@
 package hokkori.web.service;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +17,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import hokkori.web.HokkoriWebApplication;
 import hokkori.web.dto.AllianceMemberDto;
 import hokkori.web.dto.ChatAttachmentDto;
 import hokkori.web.dto.ChatMessageDto;
@@ -30,20 +25,19 @@ import hokkori.web.entity.ChatAttachment;
 import hokkori.web.entity.ChatMessage;
 import hokkori.web.entity.ChatMessageView;
 import hokkori.web.model.discord.DIscordEventListener;
+import hokkori.web.model.member.MemberModel;
 import hokkori.web.repository.ChannelMasterRepository;
 import hokkori.web.repository.ChatAttachmentRepository;
 import hokkori.web.repository.ChatMessageRepository;
 import hokkori.web.repository.ChatMessageViewRepository;
 import hokkori.web.util.discord.DiscordBot;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
 
 @Service
 public class ChatService implements DIscordEventListener {
 
 	private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 	@Autowired
-	private MemberService memberService;
+	private MemberModel memberModel;
 	@Autowired
 	private DiscordBot discordBot;
 	@Autowired
@@ -95,62 +89,7 @@ public class ChatService implements DIscordEventListener {
 		});
 	}
 
-	@Transactional // このメソッド全体を単一のトランザクションで実行
-	public void saveChatHistory(List<Message> messageList, ChannelMaster channel) {
-		List<Message> sortMessageList = new ArrayList<>(messageList);
-		sortMessageList.sort(Comparator.comparing(Message::getIdLong));
 
-		for (Message message : sortMessageList) {
-			if (chatMessageRepository.findByDiscordMessageId(message.getId()) != null)
-				continue;
-
-			// TODO ChannelとChatMessageのリレーションシップを適切に設定する
-			// 現在は channel_master_id が使われている
-
-			ChatMessage chatMessage = new ChatMessage();
-			ZoneId zone = ZoneId.of("Etc/GMT+9");
-			ZonedDateTime zonedDateTime = message.getTimeCreated().atZoneSameInstant(zone);
-			Instant instant = zonedDateTime.toInstant();
-			Date date = Date.from(instant);
-			chatMessage.setCreateDate(HokkoriWebApplication.sdf.format(date));
-			chatMessage.setDiscordMessageId(message.getId());
-			chatMessage.setMessage(message.getContentDisplay().replace("\n", "<br>"));
-			chatMessage.setName(getName(message.getMember()));
-			chatMessage.setChannelMasterId(channel.getId()); // この部分はあなたのエンティティ構造に合わせる
-
-			if (message.getReferencedMessage() != null)
-				chatMessage.setQuoteDiscordId(message.getReferencedMessage().getId());
-
-			ChatMessage savedChatMessage = chatMessageRepository.save(chatMessage);
-
-			// 添付ファイルの保存
-			message.getAttachments().forEach((attachment) -> {
-				ChatAttachment chatAttachment = new ChatAttachment();
-				chatAttachment.setAttachmentUrl(attachment.getUrl());
-				chatAttachment.setChatMessage(savedChatMessage);
-				chatAttachment.setAttachmentFileName(attachment.getFileName());
-				chatAttachmentRepository.save(chatAttachment);
-			});
-
-			// quoteIdの更新
-			ChatMessage quoteChatMessage = chatMessageRepository
-					.findByDiscordMessageId(savedChatMessage.getQuoteDiscordId());
-			if (quoteChatMessage != null) {
-				savedChatMessage.setQuoteId(quoteChatMessage.getId().toString());
-				chatMessageRepository.save(savedChatMessage);
-			}
-		}
-		log.info("履歴のデータベース保存が完了しました。");
-	}
-
-	private String getName(Member member) {
-		String nickname = member.getNickname();
-		String effectiveName = member.getEffectiveName();
-		if (nickname == null) {
-			nickname = effectiveName;
-		}
-		return nickname;
-	}
 
 	@Override
 	@Transactional
@@ -202,7 +141,7 @@ public class ChatService implements DIscordEventListener {
 	}
 
 	public void sendMessage(ChatMessageDto chatMessageDto) {
-		discordBot.sendMessage(chatMessageDto, memberService.getAllianceMemberDtoList());
+		discordBot.sendMessage(chatMessageDto, memberModel.getAllianceMemberDtoList());
 	}
 
 	@Override
@@ -254,7 +193,7 @@ public class ChatService implements DIscordEventListener {
 		}
 		chatMessageDtoList.sort(Comparator.comparing(ChatMessageDto::getId).reversed());
 		if (ayarabuName != null && !ayarabuName.isEmpty()) {
-			AllianceMemberDto allianceMemberDto = memberService.getAllianceMemberDtoByAyarabuName(ayarabuName);
+			AllianceMemberDto allianceMemberDto = memberModel.getAllianceMemberDtoByAyarabuName(ayarabuName);
 			List<ChatMessageView> chatMessageViewList = chatMessageViewRepository
 					.findAllByMemberId(allianceMemberDto.getId());
 			chatMessageViewList.forEach(chatMessageView -> {

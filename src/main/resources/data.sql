@@ -1,6 +1,9 @@
 --insert into channel_master (channel_id, channel_name) values ('1388387730001494051','一般');
 insert into channel_master (channel_id, channel_name) values ('1393571766462316554','web同期');
 
+insert into alliance_member (ayarabu_id, ayarabu_name, member_role, bot, alliance) values ('ayarabu','ion', 'MEMBER', 0, 'NONE');
+
+
 insert into level_master (enemy_level) values (150);
 insert into level_master (enemy_level) values (165);
 insert into level_master (enemy_level) values (180);

@@ -44,7 +44,7 @@ window.addEventListener("DOMContentLoaded", (event: Event) => {
 });
 
 function initIndex() {
-	existNewMessage();
+	setInterval(existNewMessage, 1000);
 }
 
 function initChat() {
@@ -52,7 +52,7 @@ function initChat() {
 	fetchAndDisplayChatMessage(false);
 	const button = document.getElementById("button") as HTMLInputElement;
 	button.onclick = onPostMessage;
-	//	setInterval(resetAndDisplayChatMessage, 5000);
+	setInterval(existNewMessageUpdateChat, 2000);
 }
 
 function initMember() {
@@ -85,18 +85,29 @@ async function existNewMessage(): Promise<void> {
 	const chatClasseElements = document.querySelectorAll<HTMLElement>('.chatClass');
 	const elementsArray = Array.from(chatClasseElements);
 	for (const htmlElement of elementsArray) {
+		const a :string = htmlElement.innerHTML; 
 		const channelId : string = htmlElement.dataset.channelId as string;
 		const url = "/chat/existNewMessage?channelId="+channelId;
 		const response = await axios.get(url, {
 		});
 		const isNew : Boolean = response.data;
+		htmlElement.style.color = "";
 		if (isNew) {
 			htmlElement.style.color = 'red';
-			const newEle = document.createElement("img") as HTMLImageElement;
-			newEle.src = "/img/new.png";
-			newEle.width = 30;
-			htmlElement.appendChild(newEle);
+			if (!a.includes("<img src=")) {
+				htmlElement.innerHTML = a + `<img src="/img/new.png" width=30>`;
+			}
 		}
+	}
+}
+async function existNewMessageUpdateChat(): Promise<void> {
+	
+	const url = "/chat/existNewMessage?channelId="+channelId;
+	const response = await axios.get(url, {
+	});
+	const isNew : Boolean = response.data;
+	if (isNew) {
+		fetchAndDisplayChatMessage(true);
 	}
 }
 
@@ -435,7 +446,7 @@ async function fetchAndDisplayMember(): Promise<void> {
 	const response = await axios.get<Member[]>(`/member`);
 	const members: Member[] = response.data; // 取得したデータ
 	const memberRoles: string[] = ["LEADER", "SUB_LEADER", "MEMBER"];
-	const memberAlliance: string[] = ["HOKKORI", "HONTO_HOKKORI", "NONE"];
+	const memberAlliance: string[] = ["MITSU", "FANZA", "NONE"];
 
 	const memberTable = document.querySelector(
 		"#memberTable tbody"

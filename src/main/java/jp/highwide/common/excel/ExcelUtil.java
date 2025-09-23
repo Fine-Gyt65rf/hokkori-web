@@ -37,7 +37,7 @@ import jp.highwide.common.excel.ExcelEntity.Align;
  * Excelのユーティリティ
  */
 public class ExcelUtil {
-	private static final Logger log = LoggerFactory.getLogger(ExcelUtil.class);
+	static final Logger log = LoggerFactory.getLogger(ExcelUtil.class);
 
 	/**
 	 * Excelを読み込む。
